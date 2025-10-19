@@ -21,6 +21,7 @@ body {
     background: white;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 
@@ -32,10 +33,13 @@ body {
 
 
 .draw-section {
-    flex: 1;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60vh;
     display: flex;
     flex-direction: column;
-    position: relative;
     background: #505050;
     overflow: hidden;
 }
@@ -94,14 +98,13 @@ body {
 
 .results-section {
     position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 0;
+    left: 0;
+    right: 0;
     z-index: 5;
     text-align: center;
     pointer-events: none;
-    width: 90%;
-    max-width: 300px;
+    padding: 20px;
 }
 
 .result-overlay {
@@ -109,6 +112,8 @@ body {
     border-radius: 20px;
     padding: 30px 40px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: inline-block;
+    min-width: 250px;
 }
 
 .result-display {
