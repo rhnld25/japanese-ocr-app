@@ -36,25 +36,54 @@ const errorDiv = document.getElementById('error');
 const drawCanvas = document.getElementById('drawCanvas');
 const drawCtx = drawCanvas.getContext('2d');
 const clearCanvasBtn = document.getElementById('clearCanvas');
-const analyzeDrawingBtn = document.getElementById('analyzeDrawing');
+const undoBtn = document.getElementById('undoBtn');
+const cameraSection = document.getElementById('cameraSection');
 
 // Drawing state
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
+let drawingHistory = [];
+let currentStrokes = [];
+
+// Set canvas size to match container
+function resizeCanvas() {
+    const rect = drawCanvas.getBoundingClientRect();
+    drawCanvas.width = rect.width;
+    drawCanvas.height = rect.height;
+    initDrawingCanvas();
+    redrawCanvas();
+}
 
 // Initialize drawing canvas
 function initDrawingCanvas() {
-    // Set canvas background to white
-    drawCtx.fillStyle = 'white';
+    // Set canvas background
+    drawCtx.fillStyle = '#505050';
     drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
     
     // Set drawing style
-    drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth = 3;
+    drawCtx.strokeStyle = 'white';
+    drawCtx.lineWidth = 4;
     drawCtx.lineCap = 'round';
     drawCtx.lineJoin = 'round';
 }
+
+// Redraw all strokes
+function redrawCanvas() {
+    initDrawingCanvas();
+    drawingHistory.forEach(stroke => {
+        drawCtx.beginPath();
+        drawCtx.moveTo(stroke[0].x, stroke[0].y);
+        stroke.forEach(point => {
+            drawCtx.lineTo(point.x, point.y);
+        });
+        drawCtx.stroke();
+    });
+}
+
+// Initialize canvas size
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
 
 // Drawing event listeners
 drawCanvas.addEventListener('mousedown', startDrawing);
@@ -70,27 +99,45 @@ drawCanvas.addEventListener('touchend', stopDrawing);
 function startDrawing(e) {
     isDrawing = true;
     const rect = drawCanvas.getBoundingClientRect();
-    lastX = e.clientX - rect.left;
-    lastY = e.clientY - rect.top;
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
+    lastX = (e.clientX - rect.left) * scaleX;
+    lastY = (e.clientY - rect.top) * scaleY;
+    currentStrokes = [{x: lastX, y: lastY}];
+    
+    // Auto-analyze when starting to draw
+    hideError();
 }
 
 function draw(e) {
     if (!isDrawing) return;
     
     const rect = drawCanvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
+    const currentX = (e.clientX - rect.left) * scaleX;
+    const currentY = (e.clientY - rect.top) * scaleY;
     
     drawCtx.beginPath();
     drawCtx.moveTo(lastX, lastY);
     drawCtx.lineTo(currentX, currentY);
     drawCtx.stroke();
     
+    currentStrokes.push({x: currentX, y: currentY});
     lastX = currentX;
     lastY = currentY;
 }
 
 function stopDrawing() {
+    if (isDrawing && currentStrokes.length > 0) {
+        drawingHistory.push([...currentStrokes]);
+        currentStrokes = [];
+        
+        // Auto-analyze after drawing
+        setTimeout(() => {
+            analyzeCurrentDrawing();
+        }, 500);
+    }
     isDrawing = false;
 }
 
@@ -98,9 +145,13 @@ function handleTouchStart(e) {
     e.preventDefault();
     const touch = e.touches[0];
     const rect = drawCanvas.getBoundingClientRect();
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
     isDrawing = true;
-    lastX = touch.clientX - rect.left;
-    lastY = touch.clientY - rect.top;
+    lastX = (touch.clientX - rect.left) * scaleX;
+    lastY = (touch.clientY - rect.top) * scaleY;
+    currentStrokes = [{x: lastX, y: lastY}];
+    hideError();
 }
 
 function handleTouchMove(e) {
@@ -109,35 +160,78 @@ function handleTouchMove(e) {
     
     const touch = e.touches[0];
     const rect = drawCanvas.getBoundingClientRect();
-    const currentX = touch.clientX - rect.left;
-    const currentY = touch.clientY - rect.top;
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
+    const currentX = (touch.clientX - rect.left) * scaleX;
+    const currentY = (touch.clientY - rect.top) * scaleY;
     
     drawCtx.beginPath();
     drawCtx.moveTo(lastX, lastY);
     drawCtx.lineTo(currentX, currentY);
     drawCtx.stroke();
     
+    currentStrokes.push({x: currentX, y: currentY});
     lastX = currentX;
     lastY = currentY;
 }
 
 // Clear canvas
 clearCanvasBtn.addEventListener('click', () => {
+    drawingHistory = [];
+    currentStrokes = [];
     initDrawingCanvas();
     hideError();
     results.style.display = 'none';
     preview.style.display = 'none';
 });
 
-// Analyze drawing
-analyzeDrawingBtn.addEventListener('click', () => {
-    drawCanvas.toBlob(blob => {
-        processImage(blob);
-    });
+// Undo last stroke
+undoBtn.addEventListener('click', () => {
+    if (drawingHistory.length > 0) {
+        drawingHistory.pop();
+        redrawCanvas();
+        if (drawingHistory.length > 0) {
+            analyzeCurrentDrawing();
+        } else {
+            results.style.display = 'none';
+        }
+    }
 });
 
-// Initialize drawing canvas on page load
-initDrawingCanvas();
+// Analyze current drawing
+function analyzeCurrentDrawing() {
+    if (drawingHistory.length === 0) return;
+    
+    drawCanvas.toBlob(blob => {
+        processImageQuietly(blob);
+    });
+}
+
+// Process image without showing loading/preview
+async function processImageQuietly(imageFile) {
+    try {
+        const ocrResult = await performOCR(imageFile);
+        
+        if (!ocrResult || !ocrResult.trim()) {
+            results.style.display = 'none';
+            return;
+        }
+        
+        const romaji = await convertToRomaji(ocrResult);
+        displayResultsCompact(ocrResult, romaji);
+        
+    } catch (error) {
+        console.error('OCR error:', error);
+        results.style.display = 'none';
+    }
+}
+
+// Display results in compact format
+function displayResultsCompact(japanese, romaji) {
+    japaneseText.textContent = japanese;
+    romajiText.textContent = romaji;
+    results.style.display = 'block';
+}
 
 // Start Camera
 startCameraBtn.addEventListener('click', async () => {
@@ -146,10 +240,7 @@ startCameraBtn.addEventListener('click', async () => {
             video: { facingMode: 'environment' } 
         });
         video.srcObject = stream;
-        video.style.display = 'block';
-        startCameraBtn.disabled = true;
-        captureBtn.disabled = false;
-        stopCameraBtn.disabled = false;
+        cameraSection.style.display = 'block';
         hideError();
     } catch (error) {
         showError('Error accessing camera: ' + error.message);
@@ -173,10 +264,7 @@ stopCameraBtn.addEventListener('click', () => {
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         video.srcObject = null;
-        video.style.display = 'none';
-        startCameraBtn.disabled = false;
-        captureBtn.disabled = true;
-        stopCameraBtn.disabled = true;
+        cameraSection.style.display = 'none';
     }
 });
 
