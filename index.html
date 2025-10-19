@@ -8,45 +8,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>🇯🇵 Live Japanese OCR</h1>
-        
-        <div class="top-section">
-            <div class="options-row">
-                <button id="startCamera" class="option-btn">📷 Camera</button>
-                <label for="imageInput" class="option-btn">
-                    📁 Upload
-                    <input type="file" id="imageInput" accept="image/*" style="display: none;" />
-                </label>
-            </div>
-            
-            <div class="camera-section" id="cameraSection" style="display: none;">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="canvas" style="display: none;"></canvas>
-                <div class="button-group">
-                    <button id="capture" class="btn btn-success">Capture & Analyze</button>
-                    <button id="stopCamera" class="btn btn-danger">Stop Camera</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="preview" class="preview-section" style="display: none;">
-            <h3>Preview:</h3>
-            <img id="previewImage" alt="Preview" />
-        </div>
-
-        <div id="loading" class="loading" style="display: none;">
-            <div class="spinner"></div>
-            <p>Processing OCR...</p>
-        </div>
-
-        <div id="results" class="results-section" style="display: none;">
+        <div id="results" class="results-section">
             <div class="result-display">
-                <div id="japaneseText" class="large-text"></div>
-                <div id="romajiText" class="small-text"></div>
+                <div id="japaneseText" class="large-text">あ</div>
+                <div id="romajiText" class="small-text">a</div>
             </div>
         </div>
-
-        <div id="error" class="error-section" style="display: none;"></div>
 
         <div class="draw-section">
             <div class="canvas-controls">

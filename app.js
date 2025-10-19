@@ -17,27 +17,15 @@ async function initKuroshiro() {
 initKuroshiro();
 
 // DOM Elements
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const startCameraBtn = document.getElementById('startCamera');
-const captureBtn = document.getElementById('capture');
-const stopCameraBtn = document.getElementById('stopCamera');
-const imageInput = document.getElementById('imageInput');
-const preview = document.getElementById('preview');
-const previewImage = document.getElementById('previewImage');
-const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const japaneseText = document.getElementById('japaneseText');
 const romajiText = document.getElementById('romajiText');
-const englishText = document.getElementById('englishText');
-const errorDiv = document.getElementById('error');
 
 // Drawing Canvas Elements
 const drawCanvas = document.getElementById('drawCanvas');
 const drawCtx = drawCanvas.getContext('2d');
 const clearCanvasBtn = document.getElementById('clearCanvas');
 const undoBtn = document.getElementById('undoBtn');
-const cameraSection = document.getElementById('cameraSection');
 
 // Drawing state
 let isDrawing = false;
@@ -45,6 +33,7 @@ let lastX = 0;
 let lastY = 0;
 let drawingHistory = [];
 let currentStrokes = [];
+let analysisTimeout = null;
 
 // Set canvas size to match container
 function resizeCanvas() {
@@ -104,9 +93,6 @@ function startDrawing(e) {
     lastX = (e.clientX - rect.left) * scaleX;
     lastY = (e.clientY - rect.top) * scaleY;
     currentStrokes = [{x: lastX, y: lastY}];
-    
-    // Auto-analyze when starting to draw
-    hideError();
 }
 
 function draw(e) {
@@ -133,10 +119,11 @@ function stopDrawing() {
         drawingHistory.push([...currentStrokes]);
         currentStrokes = [];
         
-        // Auto-analyze after drawing
-        setTimeout(() => {
+        // Live update - analyze immediately after drawing
+        if (analysisTimeout) clearTimeout(analysisTimeout);
+        analysisTimeout = setTimeout(() => {
             analyzeCurrentDrawing();
-        }, 500);
+        }, 300);
     }
     isDrawing = false;
 }
@@ -151,7 +138,6 @@ function handleTouchStart(e) {
     lastX = (touch.clientX - rect.left) * scaleX;
     lastY = (touch.clientY - rect.top) * scaleY;
     currentStrokes = [{x: lastX, y: lastY}];
-    hideError();
 }
 
 function handleTouchMove(e) {
@@ -180,9 +166,8 @@ clearCanvasBtn.addEventListener('click', () => {
     drawingHistory = [];
     currentStrokes = [];
     initDrawingCanvas();
-    hideError();
-    results.style.display = 'none';
-    preview.style.display = 'none';
+    japaneseText.textContent = '';
+    romajiText.textContent = '';
 });
 
 // Undo last stroke
@@ -191,9 +176,13 @@ undoBtn.addEventListener('click', () => {
         drawingHistory.pop();
         redrawCanvas();
         if (drawingHistory.length > 0) {
-            analyzeCurrentDrawing();
+            if (analysisTimeout) clearTimeout(analysisTimeout);
+            analysisTimeout = setTimeout(() => {
+                analyzeCurrentDrawing();
+            }, 300);
         } else {
-            results.style.display = 'none';
+            japaneseText.textContent = '';
+            romajiText.textContent = '';
         }
     }
 });
@@ -213,7 +202,8 @@ async function processImageQuietly(imageFile) {
         const ocrResult = await performOCR(imageFile);
         
         if (!ocrResult || !ocrResult.trim()) {
-            results.style.display = 'none';
+            japaneseText.textContent = '';
+            romajiText.textContent = '';
             return;
         }
         
@@ -222,98 +212,15 @@ async function processImageQuietly(imageFile) {
         
     } catch (error) {
         console.error('OCR error:', error);
-        results.style.display = 'none';
     }
 }
 
 // Display results in compact format
 function displayResultsCompact(japanese, romaji) {
-    japaneseText.textContent = japanese;
-    romajiText.textContent = romaji;
-    results.style.display = 'block';
-}
-
-// Start Camera
-startCameraBtn.addEventListener('click', async () => {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-        });
-        video.srcObject = stream;
-        cameraSection.style.display = 'block';
-        hideError();
-    } catch (error) {
-        showError('Error accessing camera: ' + error.message);
-    }
-});
-
-// Capture Image from Camera
-captureBtn.addEventListener('click', () => {
-    const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0);
-    
-    canvas.toBlob(blob => {
-        processImage(blob);
-    });
-});
-
-// Stop Camera
-stopCameraBtn.addEventListener('click', () => {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-        cameraSection.style.display = 'none';
-    }
-});
-
-// File Upload
-imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        processImage(file);
-    }
-});
-
-// Process Image
-async function processImage(imageFile) {
-    hideError();
-    results.style.display = 'none';
-    
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        previewImage.src = e.target.result;
-        preview.style.display = 'block';
-    };
-    reader.readAsDataURL(imageFile);
-    
-    // Show loading
-    loading.style.display = 'block';
-    
-    try {
-        // Perform OCR
-        const ocrResult = await performOCR(imageFile);
-        
-        if (!ocrResult || !ocrResult.trim()) {
-            throw new Error('No text detected in the image. Please try another image with clearer Japanese text.');
-        }
-        
-        // Convert to Romaji
-        const romaji = await convertToRomaji(ocrResult);
-        
-        // Translate to English
-        const english = await translateToEnglish(ocrResult);
-        
-        // Display results
-        displayResults(ocrResult, romaji, english);
-        
-    } catch (error) {
-        showError('Error processing image: ' + error.message);
-    } finally {
-        loading.style.display = 'none';
-    }
+    // Clean up the OCR result - take first character if multiple detected
+    const cleanJapanese = japanese.trim().split(/\s+/)[0];
+    japaneseText.textContent = cleanJapanese;
+    romajiText.textContent = romaji.trim().split(/\s+/)[0];
 }
 
 // Perform OCR using Tesseract.js
@@ -349,47 +256,4 @@ async function convertToRomaji(text) {
     }
 }
 
-// Translate to English using LibreTranslate API (free, no API key needed)
-async function translateToEnglish(text) {
-    try {
-        // Using MyMemory Translation API (free, no key required)
-        const response = await fetch(
-            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|en`
-        );
-        
-        if (!response.ok) {
-            throw new Error('Translation API request failed');
-        }
-        
-        const data = await response.json();
-        
-        if (data.responseData && data.responseData.translatedText) {
-            return data.responseData.translatedText;
-        } else {
-            throw new Error('Translation not available');
-        }
-    } catch (error) {
-        console.error('Translation error:', error);
-        // Fallback message
-        return 'Translation temporarily unavailable. Consider using Google Translate API or DeepL API for better results.';
-    }
-}
 
-// Display Results
-function displayResults(japanese, romaji, english) {
-    japaneseText.textContent = japanese;
-    romajiText.textContent = romaji;
-    englishText.textContent = english;
-    results.style.display = 'block';
-}
-
-// Show Error
-function showError(message) {
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-}
-
-// Hide Error
-function hideError() {
-    errorDiv.style.display = 'none';
-}
