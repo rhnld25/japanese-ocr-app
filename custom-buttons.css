@@ -1,0 +1,71 @@
+/* 
+ * CUSTOM BUTTON STYLES
+ * Replace the button images or styles here with your own design
+ */
+
+/* 
+ * To use your own button icons:
+ * 1. Replace the SVG data URLs in index.html with your image paths
+ * 2. Or modify these styles to change button appearance
+ */
+
+/* Undo Button Customization */
+#undoBtn {
+    /* Add your custom styles here */
+    /* Example: background-image: url('path/to/your/undo-icon.png'); */
+}
+
+#undoBtn .btn-icon {
+    /* Style the undo icon */
+}
+
+/* Delete/Clear Button Customization */
+#clearCanvas {
+    /* Add your custom styles here */
+    /* Example: background-image: url('path/to/your/delete-icon.png'); */
+}
+
+#clearCanvas .btn-icon {
+    /* Style the delete icon */
+}
+
+/* 
+ * Example: Using custom images instead of SVG
+ * Uncomment and modify these lines:
+ */
+/*
+#undoBtn {
+    background-image: url('images/undo.png');
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#undoBtn .btn-icon {
+    display: none;
+}
+
+#clearCanvas {
+    background-image: url('images/delete.png');
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#clearCanvas .btn-icon {
+    display: none;
+}
+*/
+
+/* 
+ * Example: Custom button colors
+ */
+/*
+.icon-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.icon-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+*/

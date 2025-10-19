@@ -5,20 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Japanese OCR</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="custom-buttons.css">
 </head>
 <body>
     <div class="container">
         <div id="results" class="results-section">
-            <div class="result-display">
-                <div id="japaneseText" class="large-text">あ</div>
-                <div id="romajiText" class="small-text">a</div>
+            <div class="result-overlay">
+                <div class="result-display">
+                    <div id="japaneseText" class="large-text">あ</div>
+                    <div id="romajiText" class="small-text">a</div>
+                </div>
             </div>
         </div>
 
         <div class="draw-section">
             <div class="canvas-controls">
-                <button id="undoBtn" class="icon-btn" title="Undo">↶</button>
-                <button id="clearCanvas" class="icon-btn" title="Clear">🗑️</button>
+                <button id="undoBtn" class="icon-btn">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M3 7v6h6'/%3E%3Cpath d='M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13'/%3E%3C/svg%3E" alt="undo" class="btn-icon" />
+                </button>
+                <button id="clearCanvas" class="icon-btn">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6'/%3E%3Cpath d='M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2'/%3E%3C/svg%3E" alt="delete" class="btn-icon" />
+                </button>
             </div>
             <canvas id="drawCanvas"></canvas>
         </div>
