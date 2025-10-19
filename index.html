@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Japanese OCR</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🇯🇵 Live Japanese OCR</h1>
+        
+        <div class="upload-section">
+            <div class="camera-section">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+                <div class="button-group">
+                    <button id="startCamera" class="btn btn-primary">Start Camera</button>
+                    <button id="capture" class="btn btn-success" disabled>Capture & Analyze</button>
+                    <button id="stopCamera" class="btn btn-danger" disabled>Stop Camera</button>
+                </div>
+            </div>
+            
+            <div class="or-divider">OR</div>
+            
+            <div class="file-upload">
+                <label for="imageInput" class="upload-label">
+                    <span>📁 Upload Image</span>
+                    <input type="file" id="imageInput" accept="image/*" />
+                </label>
+            </div>
+
+            <div class="or-divider">OR</div>
+
+            <div class="draw-section">
+                <h3>✍️ Draw Japanese Characters</h3>
+                <canvas id="drawCanvas" width="400" height="200"></canvas>
+                <div class="button-group">
+                    <button id="clearCanvas" class="btn btn-danger">Clear</button>
+                    <button id="analyzeDrawing" class="btn btn-success">Analyze Drawing</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="preview" class="preview-section" style="display: none;">
+            <h3>Preview:</h3>
+            <img id="previewImage" alt="Preview" />
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing OCR...</p>
+        </div>
+
+        <div id="results" class="results-section" style="display: none;">
+            <h2>Results:</h2>
+            
+            <div class="result-card">
+                <h3>Japanese Text:</h3>
+                <div id="japaneseText" class="text-output"></div>
+            </div>
+
+            <div class="result-card">
+                <h3>Romaji:</h3>
+                <div id="romajiText" class="text-output"></div>
+            </div>
+
+            <div class="result-card">
+                <h3>English Translation:</h3>
+                <div id="englishText" class="text-output"></div>
+            </div>
+        </div>
+
+        <div id="error" class="error-section" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/kuroshiro@1.2.0/dist/kuroshiro.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/kuroshiro-analyzer-kuromoji@1.1.0/dist/kuroshiro-analyzer-kuromoji.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
